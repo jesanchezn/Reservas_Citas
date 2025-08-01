@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inicio - Sistema de Citas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Bienvenido al sistema de citas</h1>
+    <p id="user-info">👤 Cargando usuario...</p>
+
+    <!-- Formulario para agendar cita -->
+    <form id="cita-form">
+      <label for="fecha">Fecha y hora:</label>
+      <input type="datetime-local" id="fecha" name="fecha" required />
+
+      <label for="servicio">Servicio:</label>
+      <input type="text" id="servicio" name="servicio" required />
+
+      <button type="submit">Agendar Cita</button>
+    </form>
+
+    <button id="logout-btn">🔒 Cerrar sesión</button>
+  </div>
+
+  <!-- Cargar la lógica desde archivo externo -->
+  <script src="js/script.js"></script>
+</body>
+</html>

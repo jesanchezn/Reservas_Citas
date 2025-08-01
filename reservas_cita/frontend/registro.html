@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Registro</h1>
+    <form id="registro-form">
+      <input type="text" id="reg-nombre" placeholder="Nombre" required />
+      <input type="email" id="reg-email" placeholder="Correo" required />
+      <input type="password" id="reg-pass" placeholder="Contraseña" required />
+      <button type="submit">Registrarse</button>
+    </form>
+    <p class="text-center">
+      ¿Ya tienes cuenta?
+      <a href="login.html">Inicia sesión</a>
+    </p>
+  </div>
+
+  <script>
+    document.getElementById("registro-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const nombre = document.getElementById("reg-nombre").value;
+      const email = document.getElementById("reg-email").value;
+      const password = document.getElementById("reg-pass").value;
+
+      try {
+        const response = await fetch("http://localhost:8000/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre, email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert("❌ Error en el registro: " + data.detail);
+        } else {
+          alert("✅ Registro exitoso. Ya puedes iniciar sesión.");
+          window.location.href = "login.html";
+        }
+      } catch (error) {
+        console.error("Error en el registro:", error);
+        alert("❌ Error de red.");
+      }
+    });
+  </script>
+</body>
+</html>

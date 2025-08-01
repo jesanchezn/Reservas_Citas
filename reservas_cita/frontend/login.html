@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Iniciar sesión</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Iniciar sesión</h1>
+    <form id="login-form">
+      <input type="email" id="login-email" placeholder="Correo" required />
+      <input type="password" id="login-pass" placeholder="Contraseña" required />
+      <button type="submit">Iniciar sesión</button>
+    </form>
+    <p class="text-center">
+      ¿No tienes cuenta?
+      <a href="registro.html">Regístrate aquí</a>
+    </p>
+  </div>
+
+  <script>
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-pass").value;
+
+      try {
+        const response = await fetch("http://localhost:8000/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert("❌ Login incorrecto: " + data.detail);
+        } else {
+          localStorage.setItem("token", data.access_token);
+          alert("✅ Login exitoso");
+          window.location.href = "index.html"; // Cambia si tu página principal se llama distinto
+        }
+      } catch (error) {
+        console.error("Error en el login:", error);
+        alert("❌ Error de red.");
+      }
+    });
+  </script>
+</body>
+</html>
