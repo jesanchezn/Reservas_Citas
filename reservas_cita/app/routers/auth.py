@@ -9,7 +9,7 @@ from app.schemas.token import Token
 from app.models import user as user_model
 from app.database import get_db
 from app.config import JWT_SECRET
-from app.services.email import enviar_correo  # <-- Import del servicio de correo
+from app.services.email import enviar_correo
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -31,21 +31,22 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     new_user = user_model.User(
         nombre=user.nombre,
         email=user.email,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        is_admin=False # Asumimos que los nuevos usuarios no son administradores
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    # Enviar correo de confirmación
-    try:
-        enviar_correo(
-            destinatario=new_user.email,
-            asunto="Confirmación de registro",
-            cuerpo=f"<h3>Hola {new_user.nombre},</h3><p>Tu cuenta ha sido registrada con éxito.</p>"
-        )
-    except Exception as e:
-        print("Error al enviar correo:", e)
+    # # Enviar correo de confirmación (Comentado para depuración)
+    # try:
+    #     enviar_correo(
+    #         destinatario=new_user.email,
+    #         asunto="Confirmación de registro",
+    #         cuerpo=f"<h3>Hola {new_user.nombre},</h3><p>Tu cuenta ha sido registrada con éxito.</p>"
+    #     )
+    # except Exception as e:
+    #     print("Error al enviar correo:", e)
 
     return new_user
 
@@ -57,3 +58,21 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
     token = create_token({"email": db_user.email})
     return {"access_token": token, "token_type": "bearer"}
+
+@router.post("/login/admin", response_model=Token)
+def login_admin(user: UserLogin, db: Session = Depends(get_db)):
+    """
+    Inicia sesión como administrador.
+    """
+    db_user = db.query(user_model.User).filter_by(email=user.email).first()
+
+    if not db_user or not pwd_context.verify(user.password, db_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+    # Verifica si el usuario es administrador
+    if not db_user.is_admin:
+        raise HTTPException(status_code=403, detail="No tienes permisos de administrador")
+
+    token = create_token({"email": db_user.email})
+    return {"access_token": token, "token_type": "bearer"}
+

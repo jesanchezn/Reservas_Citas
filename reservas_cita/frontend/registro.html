@@ -1,54 +1,168 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Registro</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="container">
-    <h1>Registro</h1>
-    <form id="registro-form">
-      <input type="text" id="reg-nombre" placeholder="Nombre" required />
-      <input type="email" id="reg-email" placeholder="Correo" required />
-      <input type="password" id="reg-pass" placeholder="Contraseña" required />
-      <button type="submit">Registrarse</button>
-    </form>
-    <p class="text-center">
-      ¿Ya tienes cuenta?
-      <a href="login.html">Inicia sesión</a>
-    </p>
-  </div>
-
-  <script>
-    document.getElementById("registro-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const nombre = document.getElementById("reg-nombre").value;
-      const email = document.getElementById("reg-email").value;
-      const password = document.getElementById("reg-pass").value;
-
-      try {
-        const response = await fetch("http://localhost:8000/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nombre, email, password }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert("❌ Error en el registro: " + data.detail);
-        } else {
-          alert("✅ Registro exitoso. Ya puedes iniciar sesión.");
-          window.location.href = "login.html";
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuario</title>
+    <!-- Incluye Tailwind CSS para un estilo rápido y moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluye lucide-react para íconos -->
+    <script src="https://unpkg.com/lucide-react@0.363.0/dist/lucide-react.js"></script>
+    <style>
+        /* Se ha eliminado la importación de la fuente. Ahora se usa una fuente nativa moderna */
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
         }
-      } catch (error) {
-        console.error("Error en el registro:", error);
-        alert("❌ Error de red.");
-      }
-    });
-  </script>
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-lg" id="main-container">
+        <!-- Contenedor del formulario de registro y la navegación al login -->
+        <div id="register-view">
+            <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900">
+                    Registra una nueva cuenta
+                </h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    Crea una cuenta para empezar a usar la aplicación.
+                </p>
+            </div>
+            
+            <!-- Formulario de registro -->
+            <form class="space-y-6" id="register-form">
+                <!-- Campo de nombre -->
+                <div>
+                    <label for="fullname" class="block text-sm font-medium text-gray-700">Nombre completo</label>
+                    <div class="mt-1">
+                        <input id="fullname" name="nombre" type="text" required
+                            class="w-full px-4 py-2 mt-2 text-sm leading-tight text-gray-700 bg-gray-200 rounded-lg appearance-none focus:outline-none focus:bg-white focus:border-blue-500 transition-colors duration-200">
+                    </div>
+                </div>
+
+                <!-- Campo de email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Dirección de correo</label>
+                    <div class="mt-1">
+                        <input id="email" name="email" type="email" autocomplete="email" required
+                            class="w-full px-4 py-2 mt-2 text-sm leading-tight text-gray-700 bg-gray-200 rounded-lg appearance-none focus:outline-none focus:bg-white focus:border-blue-500 transition-colors duration-200">
+                    </div>
+                </div>
+
+                <!-- Campo de contraseña -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+                    <div class="mt-1">
+                        <input id="password" name="password" type="password" autocomplete="new-password" required
+                            class="w-full px-4 py-2 mt-2 text-sm leading-tight text-gray-700 bg-gray-200 rounded-lg appearance-none focus:outline-none focus:bg-white focus:border-blue-500 transition-colors duration-200">
+                    </div>
+                </div>
+
+                <!-- Contenedor para mensajes de estado -->
+                <div id="message-box" class="p-4 rounded-lg text-sm text-center font-medium hidden"></div>
+
+                <!-- Botón de registro -->
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        Registrarme
+                    </button>
+                </div>
+            </form>
+
+            <!-- Botón para ir al login -->
+            <div class="mt-4 text-center" id="login-link-container">
+                <a href="login.html" class="font-medium text-blue-600 hover:text-blue-500">
+                    ¿Ya tienes una cuenta? Iniciar sesión
+                </a>
+            </div>
+        </div>
+
+        <!-- Contenedor para el mensaje de éxito del registro -->
+        <div id="success-message-container" class="hidden">
+            <div class="bg-white p-8 rounded-xl shadow-2xl text-center space-y-6">
+                <h3 class="text-2xl font-bold text-green-600">¡Registro Exitoso!</h3>
+                <p class="text-gray-700">Tu cuenta ha sido creada. Por favor, inicia sesión para continuar.</p>
+                <a href="login.html" class="w-full block py-3 px-6 rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                    Ir a Iniciar Sesión
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de JavaScript para manejar el formulario -->
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const fullname = form.nombre.value;
+            const email = form.email.value;
+            const password = form.password.value;
+
+            const userData = {
+                nombre: fullname,
+                email: email,
+                password: password
+            };
+
+            const messageBox = document.getElementById('message-box');
+            const registerView = document.getElementById('register-view');
+            const successContainer = document.getElementById('success-message-container');
+            
+            messageBox.textContent = '';
+            messageBox.className = 'p-4 rounded-lg text-sm text-center font-medium';
+            messageBox.classList.remove('hidden');
+
+            messageBox.textContent = 'Cargando...';
+            messageBox.classList.add('bg-gray-200', 'text-gray-800');
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData),
+                });
+
+                console.log("Respuesta de la API - Estado:", response.status);
+                
+                let result = {};
+                if (response.headers.get("content-length") > 0) {
+                    try {
+                        result = await response.json();
+                    } catch (e) {
+                        console.error("Error al analizar la respuesta JSON. Podría ser una respuesta sin contenido:", e);
+                    }
+                }
+
+                if (response.status >= 200 && response.status < 300) {
+                    console.log("Registro exitoso. Mensaje del servidor:", result);
+                    registerView.classList.add('hidden'); // Oculta el formulario de registro
+                    successContainer.classList.remove('hidden'); // Muestra el mensaje de éxito
+                } else {
+                    let errorMessage = 'Ocurrió un error inesperado.';
+                    if (result && Array.isArray(result.detail)) {
+                        errorMessage = result.detail.map(err => err.msg).join('; ');
+                    } else if (result && result.detail) {
+                        errorMessage = result.detail;
+                    } else if (response.statusText) {
+                        errorMessage = `Error del servidor: ${response.statusText}`;
+                    }
+
+                    messageBox.textContent = errorMessage;
+                    messageBox.classList.remove('bg-gray-200', 'text-gray-800');
+                    messageBox.classList.add('bg-red-100', 'text-red-800');
+                    console.error("Error del servidor. Estado:", response.status, "Mensaje:", result);
+                }
+            } catch (error) {
+                messageBox.textContent = 'Error de conexión. Intenta de nuevo más tarde.';
+                messageBox.classList.remove('bg-gray-200', 'text-gray-800');
+                messageBox.classList.add('bg-red-100', 'text-red-800');
+                console.error('Error en la llamada fetch:', error);
+            }
+        });
+    </script>
 </body>
 </html>
