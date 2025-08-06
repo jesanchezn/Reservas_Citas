@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido</title>
+    <!-- Carga Tailwind CSS para clases utilitarias -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carga la fuente Inter desde Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Enlace a tu archivo de estilos externo -->
+    <link rel="stylesheet" href="style.css"> 
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>¡Bienvenido!</h1>
+
+        <div class="mb-6">
+            <label for="company-select" class="block text-sm font-medium text-gray-700">Selecciona una empresa:</label>
+            <select id="company-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <option value="">Cargando empresas...</option>
+            </select>
+            <div id="company-message" class="text-red-600 text-sm mt-2"></div>
+        </div>
+
+        <!-- Campo de fecha del calendario (Flatpickr) -->
+        <div id="calendar-container" class="mt-8 p-4 bg-gray-50 rounded-md border border-gray-200 hidden">
+            <label for="date-picker" class="block text-sm font-medium text-gray-700 mb-2">Selecciona una fecha:</label>
+            <input type="text" id="date-picker" placeholder="Selecciona una fecha" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <div id="time-slots-container" class="mt-4 grid grid-cols-2 gap-2">
+                <!-- Aquí se cargarán los horarios disponibles -->
+            </div>
+            <div id="booking-message" class="mt-4 text-sm"></div>
+        </div>
+
+        <!-- Botón de Cerrar Sesión -->
+        <button id="logout-button" class="mt-8 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            Cerrar Sesión
+        </button>
+    </div>
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script> <!-- Idioma español -->
+
+    <script>
+        let flatpickrInstance; // Para almacenar la instancia de Flatpickr
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const companySelect = document.getElementById('company-select');
+            const companyMessageDiv = document.getElementById('company-message');
+            const calendarContainer = document.getElementById('calendar-container');
+            const datePicker = document.getElementById('date-picker');
+            const timeSlotsContainer = document.getElementById('time-slots-container');
+            const bookingMessageDiv = document.getElementById('booking-message');
+            const logoutButton = document.getElementById('logout-button');
+
+            // --- Inicializar Flatpickr ---
+            flatpickrInstance = flatpickr(datePicker, {
+                locale: "es", // Establecer idioma a español
+                dateFormat: "Y-m-d", // Formato de fecha
+                minDate: "today", // No permitir fechas pasadas
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Cuando se selecciona una fecha, cargar los horarios disponibles
+                    const selectedCompanyId = companySelect.value;
+                    if (selectedCompanyId && dateStr) {
+                        loadTimeSlots(selectedCompanyId, dateStr);
+                    } else {
+                        timeSlotsContainer.innerHTML = '';
+                        bookingMessageDiv.textContent = '';
+                    }
+                }
+            });
+
+            // --- Función para cargar empresas ---
+            async function loadCompanies() {
+                try {
+                    const response = await fetch('http://localhost:8000/companies/');
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+                    const companies = await response.json();
+
+                    companySelect.innerHTML = ''; // Limpiar opciones
+
+                    if (companies.length === 0) {
+                        companySelect.innerHTML = '<option value="">No hay empresas disponibles</option>';
+                        return;
+                    }
+
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Seleccione una empresa';
+                    companySelect.appendChild(defaultOption);
+
+                    companies.forEach(company => {
+                        const option = document.createElement('option');
+                        option.value = company.id;
+                        option.textContent = company.name;
+                        companySelect.appendChild(option);
+                    });
+
+                } catch (error) {
+                    console.error('Error al cargar las empresas:', error);
+                    companyMessageDiv.textContent = 'Error al cargar las empresas. Inténtalo de nuevo más tarde.';
+                    companySelect.innerHTML = '<option value="">Error al cargar</option>';
+                }
+            }
+
+            // --- Función para cargar horarios disponibles para una fecha y empresa ---
+            async function loadTimeSlots(companyId, dateStr) {
+                timeSlotsContainer.innerHTML = '<p class="text-gray-500 text-center col-span-2">Cargando horarios...</p>';
+                bookingMessageDiv.textContent = ''; // Limpiar mensajes de reserva
+
+                try {
+                    const response = await fetch(`http://localhost:8000/appointments/available_times/${companyId}?date=${dateStr}`);
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+                    const timeSlots = await response.json();
+
+                    timeSlotsContainer.innerHTML = ''; // Limpiar contenido anterior
+
+                    if (timeSlots.length === 0) {
+                        timeSlotsContainer.innerHTML = '<p class="text-gray-500 text-center col-span-2">No hay horarios disponibles para esta fecha.</p>';
+                        return;
+                    }
+
+                    timeSlots.forEach(slot => {
+                        const button = document.createElement('button');
+                        button.className = 'bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-md';
+                        button.textContent = slot;
+                        button.onclick = () => bookAppointment(companyId, dateStr, slot);
+                        timeSlotsContainer.appendChild(button);
+                    });
+
+                } catch (error) {
+                    console.error('Error al cargar los horarios:', error);
+                    timeSlotsContainer.innerHTML = '<p class="text-red-600 text-center col-span-2">Error al cargar horarios. Inténtalo de nuevo más tarde.</p>';
+                }
+            }
+
+            // --- Función para reservar una cita ---
+            async function bookAppointment(companyId, dateStr, timeStr) {
+                bookingMessageDiv.textContent = 'Reservando cita...';
+                bookingMessageDiv.className = 'mt-4 text-sm text-gray-600';
+
+                try {
+                    const dateTime = new Date(`${dateStr}T${timeStr}:00`); // Combinar fecha y hora
+                    const response = await fetch('http://localhost:8000/appointments/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            company_id: companyId,
+                            start_time: dateTime.toISOString(), // Enviar en formato ISO 8601
+                            end_time: new Date(dateTime.getTime() + 60 * 60 * 1000).toISOString() // Asumir citas de 1 hora
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || `Error HTTP: ${response.status}`);
+                    }
+
+                    const bookedAppointment = await response.json();
+                    bookingMessageDiv.textContent = `✅ Cita reservada para ${dateStr} a las ${timeStr} (ID: ${bookedAppointment.id}).`;
+                    bookingMessageDiv.className = 'mt-4 text-sm text-green-600';
+                    
+                    // Recargar los horarios para reflejar la reserva
+                    loadTimeSlots(companyId, dateStr);
+
+                } catch (error) {
+                    console.error('Error al reservar la cita:', error);
+                    bookingMessageDiv.textContent = `❌ Error al reservar: ${error.message}`;
+                    bookingMessageDiv.className = 'mt-4 text-sm text-red-600';
+                }
+            }
+
+            // --- Función para cerrar sesión ---
+            function logout() {
+                // Aquí podrías limpiar cualquier token de sesión o datos de usuario si los tuvieras
+                window.location.href = "login.html";
+            }
+
+            // Cargar empresas al iniciar la página
+            await loadCompanies();
+
+            // Escuchar cambios en la selección de la empresa
+            companySelect.addEventListener('change', (event) => {
+                const selectedCompanyId = event.target.value;
+                if (selectedCompanyId) {
+                    calendarContainer.classList.remove('hidden'); // Mostrar el calendario
+                    flatpickrInstance.clear(); // Limpiar la fecha seleccionada en el calendario
+                    timeSlotsContainer.innerHTML = ''; // Limpiar horarios
+                    bookingMessageDiv.textContent = ''; // Limpiar mensajes
+                    // Opcional: podrías cargar disponibilidad por defecto para una fecha cercana aquí
+                } else {
+                    calendarContainer.classList.add('hidden'); // Ocultar el calendario
+                    timeSlotsContainer.innerHTML = '';
+                    bookingMessageDiv.textContent = '';
+                }
+            });
+
+            // Escuchar el clic en el botón de cerrar sesión
+            logoutButton.addEventListener('click', logout);
+        });
+    </script>
+</body>
+</html>
